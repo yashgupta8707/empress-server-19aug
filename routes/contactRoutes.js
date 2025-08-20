@@ -1,4 +1,4 @@
-// routes/contactRoutes.js
+// routes/contactRoutes.js - Fixed version
 import express from 'express';
 import { 
   submitContactForm,
@@ -16,10 +16,11 @@ const router = express.Router();
 router.post('/', submitContactForm);
 
 // Admin routes - Manage contact inquiries
-router.get('/admin/contacts', protect, admin, getAllContacts);
-router.get('/admin/contacts/stats', protect, admin, getContactStats);
-router.get('/admin/contacts/:id', protect, admin, getContactById);
-router.put('/admin/contacts/:id', protect, admin, updateContact);
-router.delete('/admin/contacts/:id', protect, admin, deleteContact);
+// FIXED: Remove '/admin' prefix since we're already in /api/contact
+router.get('/admin/all', protect, admin, getAllContacts);
+router.get('/admin/stats', protect, admin, getContactStats);
+router.get('/admin/:id', protect, admin, getContactById);
+router.put('/admin/:id', protect, admin, updateContact);
+router.delete('/admin/:id', protect, admin, deleteContact);
 
 export default router;

@@ -359,6 +359,8 @@ const markOrderAsDelivered = async (req, res) => {
     }
 }
 
+
+
 const getOrderStats = async (req, res) => {
     try {
         const totalOrders = await Order.countDocuments();
@@ -416,3 +418,48 @@ const getOrderStats = async (req, res) => {
         res.status(500).json({ message: "Unable to fetch order statistics!" });
     }
 }
+
+const getUserOrderHistory = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const foundUser = await User.findById(id);
+        if (!foundUser) {
+            return res.status(404).json({ message: "User not found!" });
+        }
+        const orders = await Order.find({ user: id }).sort({ createdAt: -1 });
+        if (orders.length === 0) {
+            return res.status(404).json({ message: "There is no order history for this user!" });
+        }
+        res.status(200).json({ message: "User details fetched successfully", success: true, user: foundUser, orders });
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error!" });
+    }
+}
+
+const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find({},'_id name email phone address');
+        res.status(200).json({ success: true, users });
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error!" });
+    }
+}
+
+export { 
+    createProduct,
+    editProduct,
+    getAllProducts,
+    deleteProduct,
+    createBlog,
+    editBlog,
+    deleteBlog,
+    getAllBlogs,
+    getAllOrders,
+    getOrderById,
+    getAllUsers,
+    getUserOrderHistory,
+    getOrderStats, 
+    markOrderAsDelivered,
+    markOrderAsPaid,
+    updateOrderStatus,
+};

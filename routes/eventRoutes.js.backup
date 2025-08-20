@@ -1,4 +1,4 @@
-// routes/eventRoutes.js - Complete version
+// routes/eventRoutes.js
 import express from 'express';
 import {
   getAllEvents,
@@ -21,13 +21,14 @@ router.get('/', getAllEvents);
 router.get('/upcoming', getUpcomingEvents);
 router.get('/schedule', getEventSchedule);
 router.get('/featured', getFeaturedEvents);
-router.get('/:id', getEventById);
+router.get('/public/:id', getEventById);
 
 // ========== ADMIN ROUTES ==========
 router.get('/admin/all', protect, admin, getAllEventsAdmin);
 router.post('/admin/create', protect, admin, createEvent);
+router.get('/admin/stats', protect, admin, getEventStats);
+router.get('/admin/:id', protect, admin, getEventById);
 router.put('/admin/:id', protect, admin, updateEvent);
 router.delete('/admin/:id', protect, admin, deleteEvent);
-router.get('/admin/stats', protect, admin, getEventStats);
 
 export default router;

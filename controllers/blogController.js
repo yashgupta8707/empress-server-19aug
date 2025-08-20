@@ -1,4 +1,4 @@
-// controllers/blogController.js
+// controllers/blogController.js - Updated with missing functions
 import Blog from '../models/Blog.js';
 
 // ========== PUBLIC ROUTES ==========
@@ -82,6 +82,23 @@ export const getAllBlogs = async (req, res) => {
   }
 };
 
+// Get single blog by ID
+export const getBlogById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const blog = await Blog.findById(id).populate('author', 'name email');
+    
+    if (!blog) {
+      return res.status(404).json({ success: false, message: 'Blog not found' });
+    }
+
+    res.status(200).json({ success: true, data: blog });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Get single blog by slug
 export const getBlogBySlug = async (req, res) => {
   try {
@@ -107,10 +124,12 @@ export const getBlogBySlug = async (req, res) => {
 // Get featured blogs
 export const getFeaturedBlogs = async (req, res) => {
   try {
+    const { limit = 6 } = req.query;
+    
     const blogs = await Blog.find({ isPublished: true, isFeatured: true })
       .populate('author', 'name email')
       .sort('-createdAt')
-      .limit(6);
+      .limit(parseInt(limit));
 
     res.status(200).json({ success: true, data: blogs });
   } catch (error) {
@@ -121,10 +140,12 @@ export const getFeaturedBlogs = async (req, res) => {
 // Get editors choice blogs
 export const getEditorsChoiceBlogs = async (req, res) => {
   try {
+    const { limit = 8 } = req.query;
+    
     const blogs = await Blog.find({ isPublished: true, isEditorsChoice: true })
       .populate('author', 'name email')
       .sort('-createdAt')
-      .limit(8);
+      .limit(parseInt(limit));
 
     res.status(200).json({ success: true, data: blogs });
   } catch (error) {
@@ -355,23 +376,6 @@ export const deleteBlog = async (req, res) => {
       success: true,
       message: 'Blog deleted successfully'
     });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// Get single blog by ID (admin)
-export const getBlogById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const blog = await Blog.findById(id).populate('author', 'name email');
-    
-    if (!blog) {
-      return res.status(404).json({ success: false, message: 'Blog not found' });
-    }
-
-    res.status(200).json({ success: true, data: blog });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

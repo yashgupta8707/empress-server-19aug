@@ -1,4 +1,4 @@
-// controllers/productController.js
+// controllers/productController.js - UPDATED
 import Product from '../models/Product.js';
 
 // ========== PUBLIC ROUTES ==========
@@ -20,7 +20,7 @@ export const getAllProducts = async (req, res) => {
     } = req.query;
 
     // Build filter object
-    const filter = {};
+    const filter = { isActive: true }; // Only show active products
     
     if (category && category !== 'all') {
       filter.category = category;
@@ -35,7 +35,8 @@ export const getAllProducts = async (req, res) => {
         { name: { $regex: search, $options: 'i' } },
         { brand: { $regex: search, $options: 'i' } },
         { description1: { $regex: search, $options: 'i' } },
-        { description2: { $regex: search, $options: 'i' } }
+        { description2: { $regex: search, $options: 'i' } },
+        { tags: { $in: [new RegExp(search, 'i')] } }
       ];
     }
     
@@ -46,7 +47,7 @@ export const getAllProducts = async (req, res) => {
     }
     
     if (featured === 'true') {
-      filter['badge.text'] = { $in: ['Featured', 'Hot', 'Popular'] };
+      filter.isFeatured = true;
     }
 
     // Build sort object
@@ -84,8 +85,8 @@ export const getAllProducts = async (req, res) => {
     const totalPages = Math.ceil(total / parseInt(limit));
 
     // Get categories and brands for filters
-    const categories = await Product.distinct('category');
-    const brands = await Product.distinct('brand');
+    const categories = await Product.distinct('category', { isActive: true });
+    const brands = await Product.distinct('brand', { isActive: true });
 
     res.status(200).json({
       success: true,
@@ -105,6 +106,7 @@ export const getAllProducts = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error in getAllProducts:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -123,7 +125,7 @@ export const getProductsByCategory = async (req, res) => {
       limit = 12
     } = req.query;
 
-    const filter = { category: categoryId };
+    const filter = { category: categoryId, isActive: true };
     
     if (brand && brand !== 'all') {
       filter.brand = { $regex: brand, $options: 'i' };
@@ -149,7 +151,7 @@ export const getProductsByCategory = async (req, res) => {
     const totalPages = Math.ceil(total / parseInt(limit));
 
     // Get available brands for this category
-    const brands = await Product.distinct('brand', { category: categoryId });
+    const brands = await Product.distinct('brand', { category: categoryId, isActive: true });
 
     res.status(200).json({
       success: true,
@@ -158,13 +160,16 @@ export const getProductsByCategory = async (req, res) => {
         pagination: {
           currentPage: parseInt(page),
           totalPages,
-          total
+          total,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1
         },
         category: categoryId,
         availableBrands: brands
       }
     });
   } catch (error) {
+    console.error('Error in getProductsByCategory:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -174,7 +179,7 @@ export const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const product = await Product.findById(id);
+    const product = await Product.findOne({ _id: id, isActive: true });
     
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
@@ -183,7 +188,8 @@ export const getProductById = async (req, res) => {
     // Get related products (same category, excluding current product)
     const relatedProducts = await Product.find({
       category: product.category,
-      _id: { $ne: id }
+      _id: { $ne: id },
+      isActive: true
     }).limit(6);
 
     res.status(200).json({
@@ -194,6 +200,7 @@ export const getProductById = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error in getProductById:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -204,9 +211,11 @@ export const getFeaturedProducts = async (req, res) => {
     const { limit = 8 } = req.query;
     
     const products = await Product.find({
+      isActive: true,
       $or: [
+        { isFeatured: true },
         { 'badge.text': { $in: ['Featured', 'Hot', 'Popular'] } },
-        { rating: { $gte: 4.5 } }
+        { rating: { $gte: 4.0 } }
       ]
     })
       .sort({ rating: -1, createdAt: -1 })
@@ -214,6 +223,7 @@ export const getFeaturedProducts = async (req, res) => {
 
     res.status(200).json({ success: true, data: products });
   } catch (error) {
+    console.error('Error in getFeaturedProducts:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -222,6 +232,7 @@ export const getFeaturedProducts = async (req, res) => {
 export const getCategories = async (req, res) => {
   try {
     const categories = await Product.aggregate([
+      { $match: { isActive: true } },
       {
         $group: {
           _id: '$category',
@@ -236,6 +247,7 @@ export const getCategories = async (req, res) => {
 
     res.status(200).json({ success: true, data: categories });
   } catch (error) {
+    console.error('Error in getCategories:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -293,11 +305,14 @@ export const getAllProductsAdmin = async (req, res) => {
         pagination: {
           currentPage: parseInt(page),
           totalPages,
-          total
+          total,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1
         }
       }
     });
   } catch (error) {
+    console.error('Error in getAllProductsAdmin:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -324,6 +339,7 @@ export const createProduct = async (req, res) => {
       data: savedProduct
     });
   } catch (error) {
+    console.error('Error in createProduct:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -350,6 +366,7 @@ export const updateProduct = async (req, res) => {
       data: product
     });
   } catch (error) {
+    console.error('Error in updateProduct:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -370,6 +387,7 @@ export const deleteProduct = async (req, res) => {
       message: 'Product deleted successfully'
     });
   } catch (error) {
+    console.error('Error in deleteProduct:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -378,20 +396,24 @@ export const deleteProduct = async (req, res) => {
 export const getProductStats = async (req, res) => {
   try {
     const totalProducts = await Product.countDocuments();
-    const inStockProducts = await Product.countDocuments({ quantity: { $gt: 0 } });
-    const outOfStockProducts = await Product.countDocuments({ quantity: { $lte: 0 } });
+    const activeProducts = await Product.countDocuments({ isActive: true });
+    const inStockProducts = await Product.countDocuments({ quantity: { $gt: 0 }, isActive: true });
+    const outOfStockProducts = await Product.countDocuments({ quantity: { $lte: 0 }, isActive: true });
     
     const categoryStats = await Product.aggregate([
+      { $match: { isActive: true } },
       { $group: { _id: '$category', count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]);
 
     const brandStats = await Product.aggregate([
+      { $match: { isActive: true } },
       { $group: { _id: '$brand', count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]);
 
     const priceStats = await Product.aggregate([
+      { $match: { isActive: true } },
       {
         $group: {
           _id: null,
@@ -407,6 +429,7 @@ export const getProductStats = async (req, res) => {
       success: true,
       data: {
         totalProducts,
+        activeProducts,
         inStockProducts,
         outOfStockProducts,
         categoryStats,
@@ -415,6 +438,7 @@ export const getProductStats = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error in getProductStats:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
