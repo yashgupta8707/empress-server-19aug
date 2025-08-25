@@ -52,12 +52,12 @@ const productSchema = mongoose.Schema({
   originalPrice: { 
     type: Number,
     min: [0, 'Original price cannot be negative'],
-    validate: {
-      validator: function(value) {
-        return !value || value >= this.price;
-      },
-      message: 'Original price should be greater than or equal to current price'
-    }
+    // validate: {
+    //   validator: function(value) {
+    //     return !value || value >= this.price;
+    //   },
+    //   message: 'Original price should be greater than or equal to current price'
+    // }
   },
   description1: { 
     type: String,
