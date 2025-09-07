@@ -1,4 +1,4 @@
-// routes/aboutRoutes.js
+// routes/aboutRoutes.js - Fixed version without Testimonial model conflicts
 import express from 'express';
 import {
   getAboutPageData,
@@ -18,10 +18,6 @@ import {
   createCoreValue,
   updateCoreValue,
   deleteCoreValue,
-  getAllTestimonials,
-  createTestimonial,
-  updateTestimonial,
-  deleteTestimonial,
   getCompanyInfo,
   updateCompanyInfo
 } from '../controllers/aboutController.js';
@@ -56,14 +52,13 @@ router.post('/admin/core-values', protect, admin, createCoreValue);
 router.put('/admin/core-values/:id', protect, admin, updateCoreValue);
 router.delete('/admin/core-values/:id', protect, admin, deleteCoreValue);
 
-// Admin routes - Testimonials
-router.get('/admin/testimonials', protect, admin, getAllTestimonials);
-router.post('/admin/testimonials', protect, admin, createTestimonial);
-router.put('/admin/testimonials/:id', protect, admin, updateTestimonial);
-router.delete('/admin/testimonials/:id', protect, admin, deleteTestimonial);
-
 // Admin routes - Company Info
 router.get('/admin/company-info', protect, admin, getCompanyInfo);
 router.put('/admin/company-info', protect, admin, updateCompanyInfo);
+
+// Note: Testimonials are now handled by dedicated testimonialRoutes.js
+// to avoid model compilation conflicts. Use the testimonial API endpoints instead:
+// - GET /api/testimonials/admin for admin testimonial management
+// - Use testimonialAPI from your frontend
 
 export default router;

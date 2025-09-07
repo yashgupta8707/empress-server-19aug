@@ -1,4 +1,4 @@
-// server.js - Final version with complete routes
+// server.js - Final version with complete routes including carousel
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -62,6 +62,7 @@ app.get("/api", (req, res) => {
       blogs: "/api/blogs",
       events: "/api/events",
       contact: "/api/contact",
+      slides: "/api/slides",
       admin: "/api/admin",
     },
   });
@@ -107,6 +108,12 @@ try {
   app.use("/api/upload", uploadRoutes.default);
   console.log("✅ Upload routes loaded");
 
+  // CAROUSEL/SLIDES ROUTES - NEW ADDITION
+  console.log("Loading carousel/slides routes...");
+  const slideRoutes = await import("./routes/slideRoutes.js");
+  app.use("/api/slides", slideRoutes.default);
+  console.log("✅ Carousel/Slides routes loaded");
+
   // BLOG ROUTES - CRITICAL FIX
   console.log("Loading blog routes...");
   const blogRoutes = await import("./routes/blogRoutes.js");
@@ -130,13 +137,20 @@ try {
   const adminRoutes = await import("./routes/adminRoutes.js");
   app.use("/api/admin", adminRoutes.default);
   console.log("✅ Admin routes loaded");
-  
+
+  //Deal routes
+  console.log("Loading deal routes...");
+  const dealRoutes = await import("./routes/dealRoutes.js");
+  app.use("/api/deals", dealRoutes.default);
+  console.log("✅ Deal routes loaded");
+
   // Cart routes
   // Import cart routes
   console.log("Loading cart routes...");
   const cartRoutes = await import("./routes/cartRoutes.js");
   // Use cart routes
   app.use("/api/cart", cartRoutes.default);
+  console.log("✅ Cart routes loaded");
 
   // Optional routes with error handling
   try {
@@ -155,6 +169,16 @@ try {
     console.log("✅ Winner routes loaded");
   } catch (err) {
     console.log("⚠️ Winner routes skipped:", err.message);
+  }
+
+  // Optional testimonial routes with error handling
+  try {
+    console.log("Loading testimonial routes...");
+    const testimonialRoutes = await import("./routes/testimonialRoutes.js");
+    app.use("/api/testimonials", testimonialRoutes.default);
+    console.log("✅ Testimonial routes loaded");
+  } catch (err) {
+    console.log("⚠️ Testimonial routes skipped:", err.message);
   }
 
   console.log("✅ All routes loaded successfully");
@@ -203,6 +227,7 @@ app.use((req, res, next) => {
         "/api/blogs",
         "/api/events",
         "/api/contact",
+        "/api/slides",
         "/api/admin",
       ],
     });
@@ -244,12 +269,14 @@ try {
 📝 Blog Routes: ✅ Loaded
 📅 Event Routes: ✅ Loaded  
 📞 Contact Routes: ✅ Loaded
+🎠 Carousel Routes: ✅ Loaded
 
 Health Check: http://localhost:${PORT}/api/health
 API Info: http://localhost:${PORT}/api
 Blog API: http://localhost:${PORT}/api/blogs
 Event API: http://localhost:${PORT}/api/events
 Contact API: http://localhost:${PORT}/api/contact
+Slides API: http://localhost:${PORT}/api/slides
     `);
   });
 
